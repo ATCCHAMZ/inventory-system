@@ -33,5 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // API resource routes
     Route::apiResource('categories', App\Http\Controllers\API\CategoryController::class);
     Route::apiResource('products', App\Http\Controllers\API\ProductController::class);
+    Route::apiResource('suppliers', App\Http\Controllers\API\SupplierController::class);
+    Route::apiResource('purchases', App\Http\Controllers\API\PurchaseController::class);
+    Route::apiResource('sales', App\Http\Controllers\API\SaleController::class);
     // Add other resource routes as needed
 });
