@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Package } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { productService } from '../../services/products';
+import api from '../../services/api'; // Make sure this points to your axios instance
 
 const ProductForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
-  
+
+  const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -21,21 +24,40 @@ const ProductForm = () => {
     price: '',
     cost_price: '',
     quantity_in_stock: '',
-    reorder_level: '5'
+    reorder_level: '5',
   });
 
   useEffect(() => {
+    fetchCategories();
+    fetchSuppliers();
     if (isEdit) {
       loadProduct();
     }
   }, [id]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data.data);
+    } catch (err) {
+      console.error('Failed to fetch categories', err);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await api.get('/suppliers');
+      setSuppliers(response.data.data);
+    } catch (err) {
+      console.error('Failed to fetch suppliers', err);
+    }
+  };
 
   const loadProduct = async () => {
     try {
       setLoading(true);
       const response = await productService.getById(id);
       const product = response.data.data;
-      
       setFormData({
         name: product.name || '',
         sku: product.sku || '',
@@ -45,7 +67,7 @@ const ProductForm = () => {
         price: product.price || '',
         cost_price: product.cost_price || '',
         quantity_in_stock: product.quantity_in_stock || '',
-        reorder_level: product.reorder_level || '5'
+        reorder_level: product.reorder_level || '5',
       });
     } catch (err) {
       setError('Failed to load product');
@@ -55,59 +77,55 @@ const ProductForm = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setSaving(true);
-  setError('');
-
-  // Convert string values to proper data types before sending
-  const formattedData = {
-    name: formData.name,
-    sku: formData.sku,
-    category_id: parseInt(formData.category_id) || 1, // Ensure it's a number
-    supplier_id: parseInt(formData.supplier_id) || 1, // Ensure it's a number
-    description: formData.description,
-    price: parseFloat(formData.price) || 0,
-    cost_price: parseFloat(formData.cost_price) || 0,
-    quantity_in_stock: parseInt(formData.quantity_in_stock) || 0,
-    reorder_level: parseInt(formData.reorder_level) || 5
-  };
-
-  console.log('Sending data to server:', formattedData); // DEBUG
-
-  try {
-    if (isEdit) {
-      await productService.update(id, formattedData);
-      alert('Product updated successfully!');
-    } else {
-      await productService.create(formattedData);
-      alert('Product created successfully!');
-    }
-    navigate('/products');
-  } catch (err) {
-    console.log('Full error response:', err.response?.data); // DEBUG
-    
-    const errorMessage = err.response?.data?.message || 
-                        err.response?.data?.error || 
-                        `Failed to ${isEdit ? 'update' : 'create'} product`;
-    setError(errorMessage);
-
-    // Show specific validation errors if available
-    if (err.response?.data?.errors) {
-      const validationErrors = Object.values(err.response.data.errors).flat();
-      setError(validationErrors.join(', '));
-    }
-  } finally {
-    setSaving(false);
-  }
-};
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    const formattedData = {
+      name: formData.name,
+      sku: formData.sku,
+      category_id: parseInt(formData.category_id) || 1,
+      supplier_id: parseInt(formData.supplier_id) || 1,
+      description: formData.description,
+      price: parseFloat(formData.price) || 0,
+      cost_price: parseFloat(formData.cost_price) || 0,
+      quantity_in_stock: parseInt(formData.quantity_in_stock) || 0,
+      reorder_level: parseInt(formData.reorder_level) || 5,
+    };
+
+    try {
+      if (isEdit) {
+        await productService.update(id, formattedData);
+        alert('Product updated successfully!');
+      } else {
+        await productService.create(formattedData);
+        alert('Product created successfully!');
+      }
+      navigate('/products');
+    } catch (err) {
+      console.log('Full error response:', err.response?.data);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        `Failed to ${isEdit ? 'update' : 'create'} product`;
+      setError(errorMessage);
+
+      if (err.response?.data?.errors) {
+        const validationErrors = Object.values(err.response.data.errors).flat();
+        setError(validationErrors.join(', '));
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -122,10 +140,7 @@ const ProductForm = () => {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
       <div className="flex items-center mb-8">
-        <Link
-          to="/products"
-          className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
-        >
+        <Link to="/products" className="flex items-center text-gray-600 hover:text-gray-900 mr-4">
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Products
         </Link>
@@ -134,7 +149,6 @@ const ProductForm = () => {
         </h1>
       </div>
 
-      {/* Form */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
@@ -144,7 +158,6 @@ const ProductForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Information */}
             <div className="md:col-span-2">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
             </div>
@@ -167,7 +180,7 @@ const ProductForm = () => {
 
             <div>
               <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-2">
-                SKU (Stock Keeping Unit) *
+                SKU *
               </label>
               <input
                 type="text"
@@ -194,9 +207,11 @@ const ProductForm = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select Category</option>
-                <option value="1">Electronics</option>
-                <option value="2">Clothing</option>
-                <option value="3">Furniture</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -205,17 +220,20 @@ const ProductForm = () => {
                 Supplier *
               </label>
               <select
-  id="supplier_id"
-  name="supplier_id"
-  required
-  value={formData.supplier_id}
-  onChange={handleChange}
-  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
->
-  <option value="">Select Supplier</option>
-  <option value="1">Tech Supplies Inc.</option>
-  {/* Add more options based on your actual suppliers */}
-</select>
+                id="supplier_id"
+                name="supplier_id"
+                required
+                value={formData.supplier_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Supplier</option>
+                {suppliers.map((sup) => (
+                  <option key={sup.id} value={sup.id}>
+                    {sup.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-2">
@@ -234,7 +252,6 @@ const ProductForm = () => {
             </div>
           </div>
 
-          {/* Pricing and Inventory */}
           <div className="border-t border-gray-200 pt-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Pricing & Inventory</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -311,12 +328,8 @@ const ProductForm = () => {
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-            <Link
-              to="/products"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900"
-            >
+            <Link to="/products" className="px-4 py-2 text-gray-600 hover:text-gray-900">
               Cancel
             </Link>
             <button

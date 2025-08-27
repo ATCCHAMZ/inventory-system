@@ -49,12 +49,12 @@ const Dashboard = () => {
             <span className="text-gray-700">Manage Products</span>
           </Link>
           <Link
-            to="/categories"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
-          >
-            <Tags className="h-6 w-6 text-green-600 mr-3" />
-            <span className="text-gray-700">Manage Categories</span>
-          </Link>
+  to="/categories"
+  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
+>
+  <Tags className="h-6 w-6 text-green-600 mr-3" />
+  <span>Manage Categories</span>
+</Link>
           <Link
             to="/sales"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"

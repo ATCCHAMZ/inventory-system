@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard'
 import ProductList from './pages/Products/ProductList'
 import ProductForm from './pages/Products/ProductForm'
 import ProtectedRoute from './components/ProtectedRoute'
+import CategoryList from './pages/Categories/CategoryList';
+import CategoryForm from './pages/Categories/CategoryForm';
 
 function MainApp() {
   return (
@@ -32,10 +34,27 @@ function MainApp() {
               <ProductForm />
             </ProtectedRoute>
           } />
+          <Route path="/categories" element={
+  <ProtectedRoute>
+    <CategoryList />
+  </ProtectedRoute>
+} />
+<Route path="/categories/new" element={
+  <ProtectedRoute>
+    <CategoryForm />
+  </ProtectedRoute>
+} />
+<Route path="/categories/edit/:id" element={
+  <ProtectedRoute>
+    <CategoryForm />
+  </ProtectedRoute>
+} />
         </Routes>
       </div>
     </Router>
+    
   )
 }
 
 export default MainApp
+
