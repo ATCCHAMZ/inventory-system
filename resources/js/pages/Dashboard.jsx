@@ -55,6 +55,13 @@ const Dashboard = () => {
   <Tags className="h-6 w-6 text-green-600 mr-3" />
   <span>Manage Categories</span>
 </Link>
+<Link
+  to="/suppliers"
+  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
+>
+  <Truck className="h-6 w-6 text-orange-600 mr-3" />
+  <span>Manage Suppliers</span>
+</Link>
           <Link
             to="/sales"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors"

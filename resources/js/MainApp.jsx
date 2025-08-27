@@ -7,6 +7,8 @@ import ProductForm from './pages/Products/ProductForm'
 import ProtectedRoute from './components/ProtectedRoute'
 import CategoryList from './pages/Categories/CategoryList';
 import CategoryForm from './pages/Categories/CategoryForm';
+import SupplierList from './pages/Suppliers/SupplierList';
+import SupplierForm from './pages/Suppliers/SupplierForm';
 
 function MainApp() {
   return (
@@ -49,6 +51,23 @@ function MainApp() {
     <CategoryForm />
   </ProtectedRoute>
 } />
+
+<Route path="/suppliers" element={
+  <ProtectedRoute>
+    <SupplierList />
+  </ProtectedRoute>
+} />
+<Route path="/suppliers/new" element={
+  <ProtectedRoute>
+    <SupplierForm />
+  </ProtectedRoute>
+} />
+<Route path="/suppliers/edit/:id" element={
+  <ProtectedRoute>
+    <SupplierForm />
+  </ProtectedRoute>
+} />
+
         </Routes>
       </div>
     </Router>
@@ -57,4 +76,5 @@ function MainApp() {
 }
 
 export default MainApp
+
 
