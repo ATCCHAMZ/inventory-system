@@ -1,0 +1,23 @@
+/* styles.css */
+@config "tailwind.config.js";
+
+
+@tailwind utilities;
+
+/* Add any customizations here, directly in CSS */
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: #f8fafc;
+}
+
+#app {
+  min-height: 100vh;
+}

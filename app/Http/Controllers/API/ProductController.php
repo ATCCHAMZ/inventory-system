@@ -30,41 +30,44 @@ class ProductController extends Controller
      * Store a newly created product.
      */
     public function store(Request $request)
-    {
-        // Validate the request
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|max:255',
-            'sku' => 'required|unique:products|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'cost_price' => 'required|numeric|min:0',
-            'quantity_in_stock' => 'required|integer|min:0',
-            'reorder_level' => 'required|integer|min:0'
-        ]);
+{
+    // Validate the request with proper empty string handling
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'sku' => 'required|string|unique:products|max:255',
+        'category_id' => 'required|integer|exists:categories,id',
+        'supplier_id' => 'required|integer|exists:suppliers,id',
+        'description' => 'nullable|string',
+        'price' => 'required|numeric|min:0',
+        'cost_price' => 'required|numeric|min:0',
+        'quantity_in_stock' => 'required|integer|min:0',
+        'reorder_level' => 'required|integer|min:0'
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error.',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Create the product
-        $product = Product::create($request->all());
-
-        // Load relationships for the response
-        $product->load(['category', 'supplier']);
-
+    if ($validator->fails()) {
         return response()->json([
-            'success' => true,
-            'message' => 'Product created successfully.',
-            'data' => $product
-        ], 201);
+            'success' => false,
+            'message' => 'Validation error.',
+            'errors' => $validator->errors()
+        ], 422);
     }
 
+    // Clean the data - convert empty strings to null for nullable fields
+    $data = $request->all();
+    $data['description'] = $request->description ?: null;
+
+    // Create the product
+    $product = Product::create($data);
+
+    // Load relationships for the response
+    $product->load(['category', 'supplier']);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Product created successfully.',
+        'data' => $product
+    ], 201);
+}
     /**
      * Display the specified product.
      */
