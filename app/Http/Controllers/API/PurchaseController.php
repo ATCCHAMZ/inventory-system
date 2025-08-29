@@ -5,10 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Purchase;
 use App\Models\Product;
-use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
@@ -17,8 +15,10 @@ class PurchaseController extends Controller
      */
     public function index()
     {
-        $purchases = Purchase::with(['product', 'supplier', 'creator'])->get();
-        
+        $purchases = Purchase::with(['product', 'supplier', 'creator'])
+                            ->orderBy('purchase_date', 'desc')
+                            ->get();
+
         return response()->json([
             'success' => true,
             'message' => 'Purchases retrieved successfully.',
@@ -36,7 +36,7 @@ class PurchaseController extends Controller
             'supplier_id' => 'required|exists:suppliers,id',
             'quantity' => 'required|integer|min:1',
             'purchase_price' => 'required|numeric|min:0',
-            'purchase_date' => 'required|date'
+            'purchase_date' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -47,16 +47,15 @@ class PurchaseController extends Controller
             ], 422);
         }
 
-        // Use transaction to ensure data consistency
-        $purchase = DB::transaction(function () use ($request) {
-            // Create the purchase
+        try {
+            // Create purchase
             $purchase = Purchase::create([
                 'product_id' => $request->product_id,
                 'supplier_id' => $request->supplier_id,
                 'quantity' => $request->quantity,
                 'purchase_price' => $request->purchase_price,
                 'purchase_date' => $request->purchase_date,
-                'created_by' => auth()->id()
+                'created_by' => auth()->id(),
             ]);
 
             // Update product stock
@@ -64,17 +63,21 @@ class PurchaseController extends Controller
             $product->quantity_in_stock += $request->quantity;
             $product->save();
 
-            return $purchase;
-        });
+            $purchase->load(['product', 'supplier', 'creator']);
 
-        // Load relationships for response
-        $purchase->load(['product', 'supplier', 'creator']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase created successfully.',
+                'data' => $purchase
+            ], 201);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Purchase created successfully.',
-            'data' => $purchase
-        ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create purchase.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -117,7 +120,7 @@ class PurchaseController extends Controller
             'supplier_id' => 'required|exists:suppliers,id',
             'quantity' => 'required|integer|min:1',
             'purchase_price' => 'required|numeric|min:0',
-            'purchase_date' => 'required|date'
+            'purchase_date' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -128,9 +131,8 @@ class PurchaseController extends Controller
             ], 422);
         }
 
-        // Use transaction for data consistency
-        DB::transaction(function () use ($request, $purchase) {
-            // Reverse old stock adjustment
+        try {
+            // Reverse old stock
             $oldProduct = Product::find($purchase->product_id);
             $oldProduct->quantity_in_stock -= $purchase->quantity;
             $oldProduct->save();
@@ -141,23 +143,29 @@ class PurchaseController extends Controller
                 'supplier_id' => $request->supplier_id,
                 'quantity' => $request->quantity,
                 'purchase_price' => $request->purchase_price,
-                'purchase_date' => $request->purchase_date
+                'purchase_date' => $request->purchase_date,
             ]);
 
-            // Apply new stock adjustment
+            // Update new stock
             $newProduct = Product::find($request->product_id);
             $newProduct->quantity_in_stock += $request->quantity;
             $newProduct->save();
-        });
 
-        // Load relationships for response
-        $purchase->load(['product', 'supplier', 'creator']);
+            $purchase->load(['product', 'supplier', 'creator']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Purchase updated successfully.',
-            'data' => $purchase
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase updated successfully.',
+                'data' => $purchase
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update purchase.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -174,20 +182,26 @@ class PurchaseController extends Controller
             ], 404);
         }
 
-        // Use transaction for data consistency
-        DB::transaction(function () use ($purchase) {
-            // Reverse stock adjustment
+        try {
+            // Reverse stock
             $product = Product::find($purchase->product_id);
             $product->quantity_in_stock -= $purchase->quantity;
             $product->save();
 
             // Delete purchase
             $purchase->delete();
-        });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Purchase deleted successfully.'
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase deleted successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete purchase.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
